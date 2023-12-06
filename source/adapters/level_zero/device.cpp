@@ -100,6 +100,7 @@ UR_APIEXPORT ur_result_t UR_APICALL urDeviceGetInfo(
     size_t *pSize ///< [out][optional] pointer to the actual size in bytes of
                   ///< the queried infoType.
 ) {
+  std::cout << "L0/device.cpp:urDeviceGetInfo\n";
   UrReturnHelper ReturnValue(propSize, ParamValue, pSize);
 
   ze_device_handle_t ZeDevice = Device->ZeDevice;
@@ -798,6 +799,40 @@ UR_APIEXPORT ur_result_t UR_APICALL urDeviceGetInfo(
     uint32_t result = Device->ZeDeviceProperties->type == ZE_DEVICE_TYPE_GPU &&
                       Device->ZeDeviceProperties->vendorId == 0x8086;
     return ReturnValue(result);
+  }
+
+  case UR_DEVICE_INFO_COMPONENT_DEVICES: {
+    const char *Mode = std::getenv("ZE_FLAT_DEVICE_HIERARCHY");
+    bool Combined = (Mode != nullptr) && (std::strcmp(Mode, "COMBINED") == 0);
+    // if (Combined) {
+    ze_driver_handle_t DriverHandle = Device->Platform->ZeDriver;
+    uint32_t DeviceCount = 0;
+    // First call to get DeviceCount.
+    ze_result_t Res = zeDeviceGet(DriverHandle, &DeviceCount, 0);
+    std::vector<ze_device_handle_t> Devs(DeviceCount);
+    // Second call to get the actual list of devices.
+    Res = zeDeviceGet(DriverHandle, &DeviceCount, Devs.data());
+    std::cout << "Devices in driver: " << DeviceCount << std::endl;
+    for (uint32_t i = 0; i < DeviceCount; ++i) {
+      // auto DevHandle = Device->ZeDevice;
+      auto DevHandle = Devs[i];
+      uint32_t DeviceCount = 0;
+      // First call to get DeviceCount.
+      ze_result_t Res = zeDeviceGetSubDevices(DevHandle, &DeviceCount, 0);
+      std::vector<ze_device_handle_t> Devs(DeviceCount);
+      // Second call to get the actual list of devices.
+      Res = zeDeviceGetSubDevices(DevHandle, &DeviceCount, Devs.data());
+      std::cout << "Subdevices of Device (" << DeviceCount << "):\n";
+      for (uint32_t i = 0; i < DeviceCount; ++i) {
+        std::cout << i << ": " << Devs[i] << "\n";
+      }
+      }
+      return ReturnValue(Res);
+      //}
+      return ReturnValue(0);
+  }
+  case UR_DEVICE_INFO_COMPOSITE_DEVICE: {
+    return ReturnValue(0);
   }
 
   default:

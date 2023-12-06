@@ -868,6 +868,10 @@ class ur_device_info_v(IntEnum):
                                                     ## semaphore resources
     INTEROP_SEMAPHORE_EXPORT_SUPPORT_EXP = 0x200F   ## [::ur_bool_t] returns true if the device supports exporting internal
                                                     ## event resources
+    COMPONENT_DEVICES = 0x2010,                     ## [::ur_device_handle_t[]] returns the set of component devices contained
+                                                    ## by a composite device
+    COMPOSITE_DEVICE = 0x2011,                      ## [::ur_device_handle_t] returns the composite device which contains this
+                                                    ## component device
 
 class ur_device_info_t(c_int):
     def __str__(self):
